@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zfy.mapper.DataSourceSnapshotMapper">
+
+    <!--
+        对应方法：DataSourceSnapshotMapper.selectLatestBySourceKey。
+        功能：每个source_key返回最新的一条快照，包含成功或失败状态；空表返回空列表。
+        s：外层正在检查的候选快照，只读取工作台展示需要的字段。
+        payload_json保存体积较大的原始数据，工作台不用它；避免SELECT *把大JSON带入排序，耗尽MySQL排序内存。
+        newer：内层用于比较的另一条快照，必须与s属于同一个source_key。
+        NOT EXISTS：如果找不到比s更新的记录，就保留s。
+        “更新”先比较fetched_at；时间相同再比较id，ID较大的记录胜出。
+        子查询的SELECT 1只用于判断是否存在匹配记录，不表示读取主键为1的行。
+        namespace绑定Mapper接口，id绑定接口方法，resultType指定每行映射成的实体类。
+    -->
+    <select id="selectLatestBySourceKey" resultType="com.zfy.pojo.entity.DataSourceSnapshot">
+        select s.id, s.source_key, s.source_name, s.available, s.is_cache,
+               s.observed_at, s.fetched_at, s.error, s.record_count
+        from data_source_snapshots s
+        where not exists (
+            select 1
+            from data_source_snapshots newer
+            where newer.source_key = s.source_key
+              and (
+                  newer.fetched_at > s.fetched_at
+                  or (newer.fetched_at = s.fetched_at and newer.id > s.id)
+              )
+        )
+        order by s.source_key
+    </select>
+
+</mapper>

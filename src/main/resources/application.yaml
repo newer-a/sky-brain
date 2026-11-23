@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: sky-brain
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/sky_brain?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    # 本机默认密码；部署时用环境变量 MYSQL_PASSWORD 覆盖
+    password: ${MYSQL_PASSWORD:123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      # 本机默认密码；部署时用环境变量 REDIS_PASSWORD 覆盖
+      password: ${REDIS_PASSWORD:123456}
+      database: 0
+      timeout: 3000ms
+      # Lettuce连接池（SpringBoot2/3默认客户端是Lettuce，推荐）
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: 1000ms
+server:
+  port: 8081
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+# 原Python环境数据服务，需单独启动；可通过环境变量覆盖地址。
+python:
+  compute-url: ${PYTHON_COMPUTE_URL:http://127.0.0.1:8005}
+  base-url: ${PYTHON_BASE_URL:http://127.0.0.1:8004}
